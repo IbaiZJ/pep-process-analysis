@@ -22,3 +22,5 @@ Every external source used in this project.
 | [python/peps commit b1e81ac1dc](https://github.com/python/peps/commit/b1e81ac1dc83b8d2d1943542010e15f9d57c3b80) | 2026-11-24 | Process change 2022-02-22: PEP 1: best practice for PEP announcement and discussion |
 | [python/peps commit b18ca66cb5](https://github.com/python/peps/commit/b18ca66cb5bcbad28b938752fc650839a1cce63d) | 2026-11-24 | Process change 2022-09-20: PEP 1: main discussion venue moves from Python-Dev to Discourse |
 | [python/peps commit 84fc526aaa](https://github.com/python/peps/commit/84fc526aaad90cc3cc4c877b217b0ed9dd53e212) | 2026-11-24 | Process change 2023-11-29: PEP 1: Typing Council mentioned |
+| [python-committers: "Transfer of power" (thread)](https://mail.python.org/archives/list/python-committers@python.org/thread/GQONAGWBBFRHVRUPU7RNBM75MHKGUFJN/) | 2026-11-24 | Start of the Transition period: the BDFL leaves the decision process (2018-07-12) |
+| [python/peps commit 8846efd623](https://github.com/python/peps/commit/8846efd623531c0c50ff417800235ce92dc1d51c) | 2026-11-24 | PEP 572 acceptance, the last BDFL decision; sets the Transition start date |

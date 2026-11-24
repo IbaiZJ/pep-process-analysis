@@ -362,3 +362,62 @@ git -C data/peps show --unified=0 <change-commit> -- pep-0001.txt peps/pep-0001.
 
 - The date and announcement of the BDFL stepping down is not in this repository; find the
   primary source (python-committers mailing list) and add it to `links.md`.
+
+## 2026-11-24 — Outcomes and time to decision by period
+
+### What I did
+
+- Found the primary source for the end of the BDFL era: the "Transfer of power" thread on
+  python-committers, 2018-07-12 (added to `links.md`).
+- Defined three governance periods in `config.py`: BDFL (to 2018-07-12), Transition
+  (2018-07-13 to 2019-02-19) and Steering Council (from 2019-02-20, when PEP 1 names the
+  Council as final authority).
+- Wrote `src/pep_analysis/analysis.py`: outcome counts and rates, time to decision and a
+  right-censoring check, overall and by period. It writes one CSV per table and
+  `results/summary.md` with every table in Markdown, which is what the report cites.
+
+### Decisions
+
+- **Rates use closed PEPs only** (accepted + rejected + withdrawn) as denominator; open
+  PEPs have no answer yet and would make the "no" rate look lower. Superseded PEPs are
+  shown apart.
+- **Rejected and withdrawn are separate rates**, as required.
+- **Period comparisons use Standards Track PEPs** (changes to the language and library);
+  Process and Informational PEPs are reported in the type table.
+- **A PEP belongs to the period of its decision date**, not its creation date, because
+  the question is who was deciding at the time.
+- **Medians and quartiles, not means:** a few PEPs took more than ten years.
+- **Excluded from time and period tables:** decisions dated by a bulk commit (13) and
+  closed PEPs without a measurable decision date (47).
+- **Transition starts 2018-07-13, not 07-12:** PEP 572, the BDFL's last decision, was
+  committed at 00:54 UTC on 2018-07-12 (commit 8846efd6, 17:54 on 07-11 in the author's
+  time zone), hours before the announcement. With day-level periods it would otherwise
+  count as a transition decision.
+- **Empty periods are shown with 0** instead of being dropped.
+
+### Results (from `results/summary.md`)
+
+- Standards Track, closed: acceptance 65.2 %, rejection 23.7 %, withdrawal 11.0 %.
+- By period (Standards Track): BDFL 279 closed, rejection 26.2 %; Steering Council 189
+  closed, rejection 17.5 %; Transition **0 decisions**.
+- All types in the Transition: 8 decisions, all governance PEPs (PEP 8001 and PEP 8016
+  accepted, six other governance models rejected).
+- Median days to acceptance (Standards Track): BDFL 99, Steering Council 151.5;
+  to rejection: 376 and 234.
+
+### Checks
+
+- Listed every decision between 2018-06-01 and 2019-04-01 and every status-changing
+  commit in the Transition: confirms that only governance PEPs were decided then.
+- Open PEPs by period of creation: 7.3 % (BDFL) vs 21.3 % (Steering Council). The
+  recent period is right-censored, so its rejection rate and times are likely to change
+  as open PEPs are closed.
+- Ruff format and lint checks pass.
+
+### Least trusted numbers
+
+- Times in the Steering Council period: 21.3 % of its PEPs are still open, and the ones
+  that will be decided late are missing from the medians, which biases them downwards.
+- `days_to_decision` starts at `Created`, which may be before or after the first public
+  discussion, and ends when the status was changed in the repository, not when the
+  decision was announced.

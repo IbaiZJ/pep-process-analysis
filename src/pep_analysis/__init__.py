@@ -2,7 +2,7 @@
 
 from collections import Counter
 
-from pep_analysis import clean, headers, history
+from pep_analysis import analysis, clean, headers, history
 from pep_analysis.config import PINNED_COMMIT
 from pep_analysis.fetch import ensure_peps_repo
 
@@ -16,6 +16,7 @@ def main() -> None:
     peps, authors, log = clean.clean(raw_rows)
     history.run(peps, log)
     clean.write_outputs(peps, authors, log)
+    analysis.run(peps, log.entries)
 
     print("\nCleaning log:")
     for rule, records, note in log.entries:
@@ -24,3 +25,4 @@ def main() -> None:
     print("\nOutcomes:")
     for outcome, count in Counter(row["outcome"] for row in peps).most_common():
         print(f"  {count:>5}  {outcome}")
+    print("\nAll tables: results/summary.md")
