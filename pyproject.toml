@@ -1,0 +1,42 @@
+[project]
+name = "pep-analysis"
+version = "0.1.0"
+description = "Observational analysis of the Python PEP process from the python/peps Git history"
+readme = "README.md"
+authors = [
+    { name = "IbaiZJ", email = "IIbaIIZJ@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = []
+
+[project.scripts]
+pep-analysis = "pep_analysis:main"
+
+[build-system]
+requires = ["uv_build>=0.13.9,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.17.6",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle: errores y avisos de estilo
+    "F",        # pyflakes: imports y variables sin usar, nombres indefinidos
+    "I",        # isort: orden de imports
+    "N",        # pep8-naming: convenciones de nombres
+    "UP",       # pyupgrade: sintaxis moderna de Python
+    "B",        # flake8-bugbear: bugs habituales
+    "SIM",      # flake8-simplify: código simplificable
+    "PTH",      # flake8-use-pathlib: usar pathlib en vez de os.path
+    "RUF",      # reglas propias de Ruff
+]
+
+[tool.ruff.format]
+quote-style = "double"
