@@ -299,3 +299,66 @@ git -C data/peps rev-list --reverse <commit>
 
 - Least trusted: decision dates of the 13 PEPs dated by bulk commits, and the time for
   `superseded` PEPs, which measures when a replacement appeared, not a decision.
+
+## 2026-11-24 — Finding the process changes
+
+### What I did
+
+- Listed the history of the process documents at the pinned commit and read the diffs of
+  the commits that change who decides, who may propose and where discussion happens.
+- Cross-checked with the data: which delegate field PEPs use by year, and the venue in
+  `Discussions-To` by year of creation.
+
+### Commands
+
+```bash
+git -C data/peps log <commit> --format='%h %cs %s' -- peps/pep-0001.rst pep-0001.txt
+git -C data/peps log <commit> --format='%h %cs %s' -- peps/pep-0013.rst pep-0013.rst
+git -C data/peps show --unified=0 <change-commit> -- pep-0001.txt peps/pep-0001.rst
+```
+
+### Process changes found (commits in python/peps)
+
+| Date | Commit | Change |
+| --- | --- | --- |
+| 2012-05-06 | [73310d4468](https://github.com/python/peps/commit/73310d446896704e8a434fcd704463fd47b0364b) | PEP 1: `BDFL-Delegate` header introduced |
+| 2016-06-25 | [30784d4044](https://github.com/python/peps/commit/30784d40447b1879a7ab099454a2d1854e1a8e70) | PEP 1: version control references point to GitHub |
+| 2018-10-27 | [f6abb96c8a](https://github.com/python/peps/commit/f6abb96c8a9fdbb4eceefd2c86fe36752d72edc0) | PEP 1: Guido removed from PEP editors, note about future governance |
+| 2018-12-26 | [d4a5364baf](https://github.com/python/peps/commit/d4a5364baf4e814c522079262df1535808da113a) | PEP 13 becomes the governance model |
+| 2019-02-04 | [9b05b181d0](https://github.com/python/peps/commit/9b05b181d0b8e199e43b2ee81b0fd9ca58185fdd) | PEP 13: results of the first Steering Council election (PEP 8100) |
+| 2019-02-20 | [83687f6ee3](https://github.com/python/peps/commit/83687f6ee354a6feac2f1ddc7a0f27fd8bbe65ef) | PEP 1: Steering Council becomes the final authority on PEPs |
+| 2019-03-04 | [c58d32c33b](https://github.com/python/peps/commit/c58d32c33bd06eb386d3f33963a1434510528f68) | PEP 1: sponsors introduced |
+| 2020-10-26 | [a169cac7d5](https://github.com/python/peps/commit/a169cac7d59498d3b1d8e611756eac973d0bf402) | PEP 1: `BDFL-Delegate` renamed `PEP-Delegate` |
+| 2022-02-22 | [b1e81ac1dc](https://github.com/python/peps/commit/b1e81ac1dc83b8d2d1943542010e15f9d57c3b80) | PEP 1: best practice for PEP announcement and discussion |
+| 2022-09-20 | [b18ca66cb5](https://github.com/python/peps/commit/b18ca66cb5bcbad28b938752fc650839a1cce63d) | PEP 1: main discussion venue moves from Python-Dev to Discourse |
+| 2023-11-29 | [84fc526aaa](https://github.com/python/peps/commit/84fc526aaad90cc3cc4c877b217b0ed9dd53e212) | PEP 1: Typing Council mentioned |
+
+### What the data shows
+
+- **Discussion venue (`Discussions-To`, by year created):** almost always empty until
+  2018. Discourse appears from 2019 (15 of 32 PEPs) and dominates from 2022 (22 of 25),
+  matching the PEP 1 change of September 2022, which only made official a shift that had
+  already started.
+- **Delegate field:** `BDFL-Delegate` is used up to 2020 and `PEP-Delegate` from 2021,
+  matching the rename of October 2020. The field name shows **when the header was
+  written, not who delegated**: a few older PEPs carry `PEP-Delegate` (2009, 2015)
+  because they were edited later. The governance change cannot be dated from this field.
+- **Who decided is often not recorded:** most accepted or rejected PEPs have no delegate
+  field. Before 2018 that means the BDFL decided, after 2019 the Steering Council, but
+  this is an inference from PEP 1 and PEP 13, not a recorded value.
+
+### Decision
+
+- **Main split: the Steering Council era** (PEP 1 names the Council as final authority
+  on 2019-02-20, after the first election on 2019-02-04). The period between the BDFL
+  stepping down and the first Council (mid 2018 to early 2019) is a transition and will
+  be reported separately rather than forced into one side.
+- **Secondary split: Discourse as the main venue** (2022-09-20), for the participation
+  analysis.
+- Sponsors (2019-03-04) almost coincide with the Council, so their effect cannot be
+  separated from it with this data.
+
+### To check
+
+- The date and announcement of the BDFL stepping down is not in this repository; find the
+  primary source (python-committers mailing list) and add it to `links.md`.
