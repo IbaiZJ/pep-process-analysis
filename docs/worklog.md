@@ -174,3 +174,50 @@ uv run ruff check .
 - `Author` values contain e-mail addresses: strip them during cleaning (personal data).
 - `BDFL-Delegate` and `PEP-Delegate` both exist: likely related to the 2018 governance
   change, to be checked against PEP 13 and the history.
+
+## 2026-11-24 — Cleaning the PEP headers
+
+### What I did
+
+- Inspected the raw headers before writing any rule: `Type` has only three values,
+  every `Created` value uses `DD-Mon-YYYY`, 681 PEPs have e-mail addresses in `Author`,
+  and `Resolution` is missing for 288 Accepted, Final or Rejected PEPs, so it cannot be
+  used as the decision date.
+- Wrote `src/pep_analysis/clean.py`, which produces `results/peps_clean.csv`,
+  `results/pep_authors.csv` and `results/cleaning_log.csv`, and called it from `main()`.
+
+### Decisions (counts come from `results/cleaning_log.csv`)
+
+| Rule | Records | Why |
+| --- | ---: | --- |
+| Exclude statuses outside the PEP 1 lifecycle | 1 | PEP 401 has status `April Fool!` (a joke) |
+| Parse `Created` as `DD-Mon-YYYY` | 747 | Any other format stops the run instead of being ignored |
+| Remove e-mail addresses from `Author` | 1093 | Personal data; never written to any output |
+| Drop empty author entries | 12 | Trailing commas in the header |
+| Do not split on the comma before `Jr.` | 2 | "Fred L. Drake, Jr." is one person |
+| Do not count group names as people | 1 | "The Python core team and community" |
+| Merge spelling variants of a name | 1 | Same name with and without an accent |
+| Merge `BDFL-Delegate` / `PEP-Delegate` into one column | 82 / 39 | Same role, renamed after the 2018 governance change; the original field is kept |
+
+- **Outcome groups** (from the statuses defined in PEP 1): accepted = Accepted, Final,
+  Active; rejected = Rejected; withdrawn = Withdrawn; open = Draft, Deferred,
+  Provisional; superseded = Superseded. Rejections (decision-makers) and withdrawals
+  (authors) are kept separate, as the assignment requires.
+- Name matching ignores accents, case and dots. It cannot detect the same person under
+  completely different names, so the number of distinct authors may be slightly too high.
+
+### Checks
+
+- 747 PEPs kept; outcomes: accepted 425, rejected 131, open 92, withdrawn 74,
+  superseded 25 (sum 747).
+- Spot-checked by hand against `git show <commit>:<path>`:
+  - PEP 160: one author "Fred L. Drake, Jr.", not two.
+  - PEP 484: three authors in order, delegate Mark Shannon from `BDFL-Delegate`.
+  - PEP 394: six authors from a multi-line `Author` header ending in a comma.
+- No `@` in `pep_authors.csv`; the only `@` in `peps_clean.csv` is in the title of PEP 403.
+- Ruff format and lint checks pass.
+
+### To check later
+
+- Whether `Active` should count as accepted when comparing Standards Track PEPs only
+  (it is used almost only by Process and Informational PEPs).

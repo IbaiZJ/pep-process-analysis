@@ -2,7 +2,7 @@
 
 from collections import Counter
 
-from pep_analysis import headers
+from pep_analysis import clean, headers
 from pep_analysis.config import PINNED_COMMIT
 from pep_analysis.fetch import ensure_peps_repo
 
@@ -12,10 +12,13 @@ def main() -> None:
     ensure_peps_repo()
     print(f"Pinned commit: {PINNED_COMMIT}")
 
-    rows = headers.run()
-    print(f"PEP files read: {len(rows)}")
+    raw_rows = headers.run()
+    peps, log = clean.run(raw_rows)
 
-    # Raw status values, before any cleaning, to see how messy the data is.
-    statuses = Counter(row.get("Status", "<missing>") for row in rows)
-    for status, count in statuses.most_common():
-        print(f"  {status}: {count}")
+    print("\nCleaning log:")
+    for rule, records, note in log.entries:
+        print(f"  {records:>5}  {rule}" + (f"  [{note}]" if note else ""))
+
+    print("\nOutcomes:")
+    for outcome, count in Counter(row["outcome"] for row in peps).most_common():
+        print(f"  {count:>5}  {outcome}")
