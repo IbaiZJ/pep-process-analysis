@@ -16,7 +16,7 @@ def main() -> None:
     peps, authors, log = clean.clean(raw_rows)
     history.run(peps, log)
     clean.write_outputs(peps, authors, log)
-    analysis.run(peps, log.entries)
+    analysis.run(peps, authors, log.entries)
 
     print("\nCleaning log:")
     for rule, records, note in log.entries:

@@ -1,39 +1,27 @@
-"""Measure how the PEP process behaves: outcomes and time to decision, overall and by
-governance period. Every number in the report comes from the tables written here.
+"""Measure how the PEP process behaves: outcomes, time to decision and participation,
+overall and by governance period. Every number in the report comes from the tables
+written here.
 
-Outputs (in results/):
-- outcomes.csv, outcomes_by_period.csv, time_to_decision.csv, open_by_created_period.csv
-- summary.md: all tables in Markdown, ready to be cited in docs/report.md
+Outputs (in results/): one CSV per table, the charts (*.png) and summary.md with all
+tables in Markdown, ready to be cited in docs/report.md.
 """
 
 import csv
 import statistics
 from collections import Counter
-from datetime import date
 from pathlib import Path
 
+from pep_analysis import charts, participation
+from pep_analysis.analysis_common import (
+    CLOSED,
+    OUTCOME_ORDER,
+    Row,
+    Table,
+    measurable,
+    pct,
+    period_of,
+)
 from pep_analysis.config import PERIODS, PINNED_COMMIT, RESULTS_DIR
-
-Row = dict[str, object]
-Table = list[dict[str, object]]
-
-OUTCOME_ORDER = ["accepted", "rejected", "withdrawn", "superseded", "open"]
-# A PEP has a final answer if it was accepted, rejected or withdrawn. Superseded PEPs are
-# counted apart: being replaced by a later proposal is not an answer to the proposal.
-CLOSED = ("accepted", "rejected", "withdrawn")
-
-
-def period_of(day: str) -> str:
-    """Return the governance period that contains an ISO date."""
-    current = PERIODS[0][0]
-    for name, start in PERIODS:
-        if date.fromisoformat(day) >= date.fromisoformat(start):
-            current = name
-    return current
-
-
-def pct(part: int, whole: int) -> str:
-    return f"{100 * part / whole:.1f}" if whole else ""
 
 
 def outcome_table(
@@ -66,15 +54,6 @@ def outcome_table(
             }
         )
     return table
-
-
-def measurable(row: Row) -> bool:
-    """True if the PEP has a decision date that can be trusted (see history.py)."""
-    return (
-        row["outcome"] in CLOSED
-        and row["days_to_decision"] != ""
-        and not row["decision_in_bulk_commit"]
-    )
 
 
 def time_table(peps: list[Row], group_name: str, group_of) -> Table:
@@ -146,7 +125,7 @@ def markdown(table: Table) -> str:
     return "\n".join(lines)
 
 
-def run(peps: list[Row], log_entries: list[tuple[str, int, str]]) -> None:
+def run(peps: list[Row], authors: list[Row], log_entries: list[tuple[str, int, str]]) -> None:
     """Compute every table, write the CSV files and results/summary.md."""
     standards = [row for row in peps if row["type"] == "Standards Track"]
     decided_dated = [row for row in peps if row["decision_date"] != ""]
@@ -190,6 +169,32 @@ def run(peps: list[Row], log_entries: list[tuple[str, int, str]]) -> None:
         ),
     }
 
+    # Authors inherit the creation year of their PEP, used for "new authors".
+    year_of = {row["pep"]: row["created_year"] for row in peps}
+    authors = [{**row, "created_year": year_of[row["pep"]]} for row in authors]
+    peps_per_author, _ = participation.author_stats(authors)
+    years = sorted({str(row["created_year"]) for row in peps})
+    tables["authors_by_pep_count"] = (
+        "Authors by number of PEPs written",
+        participation.bucket_table(peps_per_author),
+    )
+    tables["participation_by_period"] = (
+        "Participation by period of creation",
+        participation.by_group(
+            peps, authors, "created_period", lambda r: period_of(str(r["created"])), period_names
+        ),
+    )
+    tables["participation_by_year"] = (
+        "Participation by year of creation",
+        participation.by_group(
+            peps, authors, "created_year", lambda r: str(r["created_year"]), years
+        ),
+    )
+    tables["delegation_by_period"] = (
+        "Standards Track decisions naming a delegate, by period of decision",
+        participation.delegation_table(peps),
+    )
+
     totals = Counter(row["outcome"] for row in peps)
     excluded_bulk = sum(bool(row["decision_in_bulk_commit"]) for row in peps)
     no_date = sum(row["outcome"] in CLOSED and row["decision_date"] == "" for row in peps)
@@ -213,6 +218,10 @@ def run(peps: list[Row], log_entries: list[tuple[str, int, str]]) -> None:
         "",
         *[f"- {name}: from {start}" for name, start in PERIODS],
     ]
+    lines += ["", "## Authorship concentration", ""]
+    lines += participation.summary_lines(peps_per_author, peps, authors)
+    lines += ["", "## Charts", ""]
+    lines += [f"- `results/{name}`" for name in charts.draw(peps, tables)]
     for name, (title, table) in tables.items():
         write_csv(table, RESULTS_DIR / f"{name}.csv")
         lines += ["", f"## {title}", "", f"`results/{name}.csv`", "", markdown(table)]

@@ -28,3 +28,7 @@ PERIODS = [
     ("2 Transition", "2018-07-13"),
     ("3 Steering Council", "2019-02-20"),
 ]
+
+# PEP 1 makes Discourse the main discussion venue instead of the Python-Dev mailing list
+# (python/peps commit b18ca66c). Used as a marker in the charts.
+DISCOURSE_DATE = "2022-09-20"

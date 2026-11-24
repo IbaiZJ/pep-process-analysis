@@ -421,3 +421,55 @@ git -C data/peps show --unified=0 <change-commit> -- pep-0001.txt peps/pep-0001.
 - `days_to_decision` starts at `Created`, which may be before or after the first public
   discussion, and ends when the status was changed in the repository, not when the
   decision was announced.
+
+## 2026-11-24 — Participation, delegation and charts
+
+### What I did
+
+- Wrote `src/pep_analysis/participation.py`: distinct authors, authors by number of PEPs,
+  concentration, new authors per year and per period, and how many Standards Track
+  decisions name a delegate.
+- Wrote `src/pep_analysis/charts.py` with three charts in `results/`:
+  `peps_by_year.png`, `time_to_decision_by_year.png`, `authors_by_year.png`, with the
+  process changes marked as vertical lines.
+- Moved helpers shared by the analysis modules to `analysis_common.py`.
+- Added the Discourse date (2022-09-20) to `config.py` as a chart marker.
+
+### Decisions
+
+- **Authors are matched by `author_key`** (normalised name, see cleaning). A "new author"
+  is one whose first PEP was created that year.
+- **Concentration is reported two ways:** authors with 10 or more PEPs ("frequent
+  authors"), and the share of all authorships held by the top 10 % of authors.
+- **Only counts and shares are written, never a ranking with names** (assignment,
+  section 8). Delegates are counted, not listed.
+- **matplotlib keeps its cache in `results/.matplotlib`** (`MPLCONFIGDIR`), set before
+  importing it, so the project writes nothing in the home directory. `results/` is ignored.
+- matplotlib uses the `Agg` backend: no display is needed in the review container.
+
+### Results (from `results/summary.md`)
+
+- 370 distinct authors. 54.3 % of them wrote a single PEP; 21 authors (5.7 %) wrote 10 or
+  more and co-authored 49.5 % of all PEPs. The top 10 % of authors (37 people) hold
+  49.0 % of authorships.
+- Mean authors per PEP: 1.39 (BDFL), 1.80 (Steering Council).
+- PEPs with a frequent author: 53.1 % (BDFL) vs 41.4 % (Steering Council).
+- Standards Track decisions naming a delegate: 12.5 % (BDFL, 14 people) vs
+  31.2 % (Steering Council, 18 people).
+- More distinct authors per year since 2019 (40-62 vs mostly 10-37 before).
+
+### Checks
+
+- Looked at all three charts: period lines are at the right dates; the 2026 bar is mostly
+  open PEPs, as expected for the current year.
+- Two PEPs have `Created` before 2000 (PEP 248, 1996, and PEP 249, 1999: the database API
+  specifications, written before the PEP process and added as PEPs later). Kept as they
+  are; they explain the bars before 2000.
+- Ruff format and lint checks pass.
+
+### Caveats
+
+- The yearly time-to-decision chart is noisy: some years have only a handful of
+  decisions. The period table is the one to cite; the chart only shows the trend.
+- Delegation may be under-recorded before 2012, when the `BDFL-Delegate` header did not
+  exist yet.
