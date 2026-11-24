@@ -3,7 +3,7 @@
 import subprocess
 
 from pep_analysis.config import DATA_DIR, PEPS_REPO_DIR, PEPS_URL, PINNED_COMMIT
-from pep_analysis.git import git, has_commit
+from pep_analysis.git import has_commit
 
 
 def ensure_peps_repo() -> None:
@@ -22,8 +22,9 @@ def ensure_peps_repo() -> None:
         )
 
     if not has_commit(PINNED_COMMIT):
-        # An older clone may not contain the pinned commit yet.
-        git("fetch", "origin")
+        # An older clone may not contain the pinned commit yet. Network commands (clone,
+        # fetch) keep the user's git configuration, which may hold proxy settings.
+        subprocess.run(["git", "-C", str(PEPS_REPO_DIR), "fetch", "origin"], check=True)
 
     if not has_commit(PINNED_COMMIT):
         msg = f"Pinned commit {PINNED_COMMIT} not found in {PEPS_URL}"

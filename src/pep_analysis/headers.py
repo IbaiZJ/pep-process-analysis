@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 from pep_analysis.config import PINNED_COMMIT, RESULTS_DIR
-from pep_analysis.git import git
+from pep_analysis.git import git, read_blobs
 
 # Proposal files live directly in peps/ and are named pep-NNNN.rst (older ones .txt).
 PEP_FILE = re.compile(r"^peps/pep-(\d{4})\.(rst|txt)$")
@@ -40,13 +40,13 @@ def parse_headers(text: str) -> dict[str, str]:
 
 
 def extract_headers() -> list[dict[str, str]]:
-    """Read every PEP file at the pinned commit and return one row of headers per file."""
-    rows = []
-    for path in list_pep_files():
-        text = git("show", f"{PINNED_COMMIT}:{path}")
-        row = {"file": path, **parse_headers(text)}
-        rows.append(row)
-    return rows
+    """Read every PEP file at the pinned commit and return one row of headers per file.
+
+    Files are read from git objects at the pinned commit, never from the working tree.
+    """
+    paths = list_pep_files()
+    blobs = read_blobs([f"{PINNED_COMMIT}:{path}" for path in paths])
+    return [{"file": path, **parse_headers(blobs[f"{PINNED_COMMIT}:{path}"])} for path in paths]
 
 
 def write_csv(rows: list[dict[str, str]], path: Path) -> None:

@@ -473,3 +473,31 @@ git -C data/peps show --unified=0 <change-commit> -- pep-0001.txt peps/pep-0001.
   decisions. The period table is the one to cite; the chart only shows the trend.
 - Delegation may be under-recorded before 2012, when the `BDFL-Delegate` header did not
   exist yet.
+
+## 2026-11-24 — Faster, isolated git access and a fresh-run test
+
+### What I did
+
+- Read all PEP files in one `git cat-file --batch` call instead of one `git show` per
+  file. The whole pipeline went from about 69 s to about 7 s on `/mnt/c`.
+- Run every read-only git command with `GIT_CONFIG_GLOBAL=/dev/null`,
+  `GIT_CONFIG_NOSYSTEM=1` and `LC_ALL=C`, so that settings in the reviewer's own git
+  configuration (for example `log.showSignature`) cannot change the output. Network
+  commands (`clone`, `fetch`) keep the user's configuration, which may contain proxy
+  settings.
+- Added matplotlib 3.11.2 as a dependency (`uv add matplotlib`), pinned in `uv.lock`.
+
+### Checks
+
+```bash
+sha256sum results/*.csv results/summary.md > /tmp/before.sha   # before the change
+uv run pep-analysis
+sha256sum -c /tmp/before.sha                                    # after: all OK
+```
+
+- Every CSV and `summary.md` is byte-for-byte identical before and after the change.
+- Fresh run: copied only the files tracked by git into an empty directory (no `data/`,
+  `results/` or `.venv/`) and ran `uv run --locked pep-analysis`. It cloned python/peps,
+  created the environment from `uv.lock` and produced identical results in about 21 s.
+  Everything it created (`.venv/`, `data/`, `results/`, `results/.matplotlib/`) is inside
+  the directory and ignored by git.
