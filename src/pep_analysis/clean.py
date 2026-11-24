@@ -18,17 +18,18 @@ from pep_analysis.config import RESULTS_DIR
 
 # Statuses defined in PEP 1, grouped into outcomes. PEP 1 describes Accepted, Final and
 # Active as states of a proposal that was approved (Active is used by Process and
-# Informational PEPs that stay in force). Rejected is a "no" by the decision-maker,
-# Withdrawn a "no" by the authors themselves, so they are kept separate.
+# Informational PEPs that stay in force), and Provisional as accepted provisionally, so
+# all four count as accepted. Rejected is a "no" by the decision-maker, Withdrawn a "no"
+# by the authors themselves, so they are kept separate.
 OUTCOMES = {
     "Accepted": "accepted",
     "Final": "accepted",
     "Active": "accepted",
     "Rejected": "rejected",
     "Withdrawn": "withdrawn",
+    "Provisional": "accepted",
     "Draft": "open",
     "Deferred": "open",
-    "Provisional": "open",
     "Superseded": "superseded",
 }
 
@@ -203,11 +204,11 @@ def write_rows(rows: list[dict[str, object]], path: Path) -> None:
         writer.writerows(rows)
 
 
-def run(raw_rows: list[dict[str, str]]) -> tuple[list[dict[str, object]], CleaningLog]:
-    """Clean the raw headers and write the clean tables and the cleaning log."""
-    peps, authors, log = clean(raw_rows)
+def write_outputs(
+    peps: list[dict[str, object]], authors: list[dict[str, object]], log: CleaningLog
+) -> None:
+    """Write the clean tables and the cleaning log to results/."""
     write_rows(peps, RESULTS_DIR / "peps_clean.csv")
     write_rows(authors, RESULTS_DIR / "pep_authors.csv")
     log_rows = [{"rule": r, "records": n, "note": note} for r, n, note in log.entries]
     write_rows(log_rows, RESULTS_DIR / "cleaning_log.csv")
-    return peps, log

@@ -13,6 +13,9 @@ def git(*args: str) -> str:
         capture_output=True,
         text=True,
         encoding="utf-8",
+        # Some old PEPs in the history were saved as Latin-1, not UTF-8. Undecodable
+        # bytes are replaced instead of crashing; header fields are ASCII anyway.
+        errors="replace",
     )
     return result.stdout
 

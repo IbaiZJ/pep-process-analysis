@@ -2,7 +2,7 @@
 
 from collections import Counter
 
-from pep_analysis import clean, headers
+from pep_analysis import clean, headers, history
 from pep_analysis.config import PINNED_COMMIT
 from pep_analysis.fetch import ensure_peps_repo
 
@@ -13,7 +13,9 @@ def main() -> None:
     print(f"Pinned commit: {PINNED_COMMIT}")
 
     raw_rows = headers.run()
-    peps, log = clean.run(raw_rows)
+    peps, authors, log = clean.clean(raw_rows)
+    history.run(peps, log)
+    clean.write_outputs(peps, authors, log)
 
     print("\nCleaning log:")
     for rule, records, note in log.entries:

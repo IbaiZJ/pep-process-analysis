@@ -200,16 +200,17 @@ uv run ruff check .
 | Merge `BDFL-Delegate` / `PEP-Delegate` into one column | 82 / 39 | Same role, renamed after the 2018 governance change; the original field is kept |
 
 - **Outcome groups** (from the statuses defined in PEP 1): accepted = Accepted, Final,
-  Active; rejected = Rejected; withdrawn = Withdrawn; open = Draft, Deferred,
-  Provisional; superseded = Superseded. Rejections (decision-makers) and withdrawals
+  Active, Provisional; rejected = Rejected; withdrawn = Withdrawn; open = Draft,
+  Deferred; superseded = Superseded. (Provisional was first grouped as open; moved to
+  accepted while building the history, see the next entry.) Rejections (decision-makers) and withdrawals
   (authors) are kept separate, as the assignment requires.
 - Name matching ignores accents, case and dots. It cannot detect the same person under
   completely different names, so the number of distinct authors may be slightly too high.
 
 ### Checks
 
-- 747 PEPs kept; outcomes: accepted 425, rejected 131, open 92, withdrawn 74,
-  superseded 25 (sum 747).
+- 747 PEPs kept; outcomes at that point: accepted 425, rejected 131, open 92,
+  withdrawn 74, superseded 25 (sum 747).
 - Spot-checked by hand against `git show <commit>:<path>`:
   - PEP 160: one author "Fred L. Drake, Jr.", not two.
   - PEP 484: three authors in order, delegate Mark Shannon from `BDFL-Delegate`.
@@ -221,3 +222,80 @@ uv run ruff check .
 
 - Whether `Active` should count as accepted when comparing Standards Track PEPs only
   (it is used almost only by Process and Informational PEPs).
+
+## 2026-11-24 — Status history and decision dates
+
+### What I did
+
+- Wrote `src/pep_analysis/history.py`, which rebuilds the status history of every PEP
+  from the Git history up to the pinned commit and adds these columns to
+  `results/peps_clean.csv`: `status_changes`, `first_status_date`, `decision_date`,
+  `days_to_decision`, `decision_in_bulk_commit`, `added_already_decided`.
+- Moved writing the outputs to the end of `main()`, so that the cleaning log also
+  contains the history rules.
+
+### Commands
+
+```bash
+# every commit that touches a Status line, oldest first, merges diffed against parent 1
+git -C data/peps log <commit> --reverse -M -G'^Status:' --diff-merges=first-parent \
+    -p --unified=0 --format='%x00%H%x09%cI'
+# renames that change the PEP number
+git -C data/peps log <commit> -M --diff-merges=first-parent --diff-filter=R --name-status
+# commit order
+git -C data/peps rev-list --reverse <commit>
+```
+
+### Decisions
+
+- **One `git log -p` for the whole repository** instead of one `git log --follow` per PEP:
+  about 5 s instead of about 8 minutes, and `--follow` cannot track several files at once.
+- **PEPs are identified by the number in the file name**, so the move into `peps/`
+  (2023) and the `.txt` -> `.rst` conversion (2017) do not break the history.
+- **Only header lines count:** a `+Status:` line is used only if it is within the first
+  60 lines of the file; further down it is example text.
+- **Committer date (UTC)** is the date of a change: for a merged pull request it is when
+  the change landed in the repository.
+- **Decision date** = the last time the status entered the PEP's final outcome group
+  (for example Draft -> Accepted counts, Accepted -> Final does not).
+  `days_to_decision` = decision date - `Created`. Open PEPs have none.
+- **Provisional moved from "open" to "accepted"**: PEP 1 defines it as provisionally
+  accepted. Before this change PEP 484 was dated 2022 (Provisional -> Final) instead of
+  its acceptance in May 2015.
+- **Repeated identical statuses are not changes** (e.g. a Status line re-added when a
+  file was converted).
+
+### Problems found in the history (counts from `results/cleaning_log.csv`)
+
+| Problem | Records | Handling |
+| --- | ---: | --- |
+| Old or misspelt statuses (`Incomplete`, `Replaced`, `Finished`, `Approved`, `Postponed`, `Acepted`, `Draught`, `Withdrawal`, `Complete`) | 33 | Mapped to the PEP 1 status (`HISTORICAL_STATUS`) |
+| Empty `Status:` value | 1 | Ignored |
+| Status changed only in a merge commit (found via PEP 405) | — | `--diff-merges=first-parent` |
+| Renumbered proposals (3000->3100, 3142->3120, 500->501, 13->103, 9999->610, 9999->654, 837->840) | 7 | Earlier history moved to the new number |
+| Bulk commits changing the status of >= 10 PEPs | 4 | Flagged; 13 decisions dated by them are unreliable |
+| PEPs first committed already decided | 47 | No decision date (cannot be measured) |
+
+- Bulk commits found: a mass deferral (2013), "a whole slew of peps that are implemented"
+  (2009), "Change the status of a whole lotta PEPs" (2007), "Mark various accepted PEPs
+  as Final" (2026).
+- Some old PEPs in the history are Latin-1, not UTF-8: undecodable bytes are replaced
+  when reading git output instead of crashing.
+- Swaps without a rename (PEP 404 and 405 swapped contents in 2011) cannot be detected:
+  the status changes before the swap are attributed to the wrong proposal. Known
+  limitation; for PEP 405 it does not change the decision date.
+
+### Checks
+
+- The last status in the history equals the header status for all 747 PEPs (0 mismatches),
+  and every PEP has at least one Status line (0 missing).
+- No negative `days_to_decision`.
+- Spot-checked decision dates against the commit messages and the `Resolution` links:
+  PEP 484 accepted 2015-05-23 (UTC; commit "accepted by BDFL-Delegate"), PEP 405
+  2012-05-25, PEP 572 2018-07-12, PEP 634 2021-02-09.
+- Ruff format and lint checks pass.
+
+### Trust
+
+- Least trusted: decision dates of the 13 PEPs dated by bulk commits, and the time for
+  `superseded` PEPs, which measures when a replacement appeared, not a decision.
