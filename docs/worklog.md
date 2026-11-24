@@ -123,3 +123,54 @@ uv run pep-analysis
 - `uv run ruff format --check .` and `uv run ruff check .` pass with no errors.
 - `uv run pep-analysis` runs the placeholder entry point.
 - `git status` does not list `.venv/`, `.ruff_cache/` or `__pycache__/`.
+
+## 2026-11-24 — Fetching the data and extracting PEP headers
+
+### What I did
+
+- Wrote the first part of the pipeline in `src/pep_analysis/`:
+  - `config.py`: repository paths and the pinned commit, hard-coded.
+  - `git.py`: helper to run `git -C data/peps ...` and to check that a commit exists.
+  - `fetch.py`: clones `python/peps` into `data/peps/` if it is missing and checks that
+    the pinned commit is present (fetching once if it is not).
+  - `headers.py`: lists the PEP files at the pinned commit, reads each one with
+    `git show`, parses its header block and writes `results/pep_headers_raw.csv`.
+  - `main()` in `__init__.py` runs both steps and prints the raw status counts.
+
+### Commands
+
+```bash
+uv run pep-analysis
+uv run ruff format --check .
+uv run ruff check .
+```
+
+### Decisions
+
+- **Files are read only through git at the pinned commit:** the file list comes from
+  `git ls-tree --name-only <commit> peps/` and each file from
+  `git show <commit>:<path>`, so the result does not depend on what is checked out.
+- **Clone with `--no-checkout`:** no working tree is needed for this, and it makes it
+  impossible to read the working tree by mistake.
+- **PEP files are matched with `^peps/pep-(\d{4})\.(rst|txt)$`**, because `peps/` also
+  contains other files (`conf.py`, `contents.rst`, image folders, etc.).
+- **Header parsing:** the header ends at the first blank line; lines starting with
+  whitespace continue the previous field.
+- **No cleaning yet:** the CSV keeps the raw values so that every cleaning step can be
+  documented and counted later.
+
+### Checks
+
+- 748 PEP files read at the pinned commit, with 18 distinct header fields.
+- Raw `Status` values: Final 375, Rejected 131, Withdrawn 74, Draft 56, Active 38,
+  Deferred 35, Superseded 25, Accepted 12, Provisional 1, `April Fool!` 1.
+- Tested from scratch in an empty directory: the clone is created automatically and the
+  counts are identical (about 20 s, mostly the clone).
+- Ruff format and lint checks pass.
+
+### Notes for the next steps
+
+- `April Fool!` is a joke PEP: needs an explicit cleaning decision.
+- `Author` values contain e-mail addresses: strip them during cleaning (personal data).
+- `BDFL-Delegate` and `PEP-Delegate` both exist: likely related to the 2018 governance
+  change, to be checked against PEP 13 and the history.
