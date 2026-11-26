@@ -582,3 +582,39 @@ git status --short
   `uv run python --version` -> 3.13.18.
 - Pinned the exact Python version in `.python-version` (`3.13.18` instead of `3.13`), so
   uv installs the same interpreter everywhere, and listed the exact versions in the README.
+
+## 2026-11-26 — Clean container test
+
+### What I did
+
+Ran the project in a fresh `ubuntu:24.04` Docker container, installing only the tools
+listed in the README and running everything as a non-root user:
+
+```bash
+docker run --rm -it ubuntu:24.04 bash
+apt-get update && apt-get install -y git curl ca-certificates   # as root
+useradd -m reviewer && su - reviewer
+curl -LsSf https://astral.sh/uv/0.13.9/install.sh | sh
+bash && source ~/.local/bin/env
+git clone https://github.com/IbaiZJ/pep-process-analysis.git
+cd pep-process-analysis
+uv run --locked pep-analysis
+uv run --locked ruff format --check .
+uv run --locked ruff check .
+git status --short
+```
+
+### Problems
+
+- `source: not found`: `useradd` gives the new user `/bin/sh`, which has no `source`.
+  Started `bash` first. Next time: `useradd -m -s /bin/bash reviewer`. Not a problem
+  of the project.
+- Docker Desktop was not running at first (`failed to connect to the docker API`).
+
+### Checks
+
+- uv installed CPython 3.13.18 and the 13 locked packages; the run cloned python/peps and
+  used the pinned commit.
+- Same numbers as my local run (748 files, 747 PEPs, accepted 426, rejected 131,
+  open 91, withdrawn 74, superseded 25); both consistency checks are 0.
+- Ruff format and lint checks pass; `git status --short` is empty.
