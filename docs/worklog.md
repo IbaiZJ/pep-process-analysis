@@ -93,10 +93,10 @@ uv run pep-analysis
 
 | Tool | Version |
 | --- | --- |
-| Linux distribution | Ubuntu 24.04 (WSL 2) — TODO: exact release from `lsb_release -a` |
-| git | TODO: from `git --version` |
+| Linux distribution | Ubuntu 24.04.5 LTS (WSL 2) |
+| git | 2.43.0 |
 | uv | 0.13.9 |
-| Python | 3.13 (managed by uv) — TODO: exact patch version from `uv run python --version` |
+| Python | 3.13.18 (managed by uv) |
 | Ruff | 0.17.6 (pinned in `uv.lock`) |
 
 ### Decisions
@@ -545,3 +545,40 @@ sha256sum -c /tmp/before.sha                                    # after: all OK
   exceptions are section numbers, PEP numbers and the "75 %" percentile heading).
 - Script: every link in `docs/report.md` appears in `docs/links.md`.
 - Ruff format and lint checks pass.
+
+## 2026-11-26 — README and run test
+
+### What I did
+
+- Rewrote `README.md` as the project's front page: what it is, main findings with the key
+  numbers (all from `results/summary.md`), pinned commit, toolchain with versions, how to
+  run, code-quality checks, what is where.
+- Followed the README word for word in an empty directory, cloning the repository from
+  GitHub:
+
+```bash
+git clone https://github.com/IbaiZJ/pep-process-analysis.git
+cd pep-process-analysis
+uv run --locked pep-analysis
+uv run --locked ruff format --check .
+uv run --locked ruff check .
+git status --short
+```
+
+### Checks
+
+- The run cloned python/peps, created the environment from `uv.lock` and finished in
+  about 15 s.
+- Ruff format and lint checks pass; `git status` is clean afterwards (nothing generated is
+  tracked).
+- Every CSV and `summary.md` is byte-for-byte identical to the results of my own working
+  copy.
+- Every number in the README's findings appears in `results/summary.md`.
+
+## 2026-11-26 — Exact toolchain versions
+
+- Checked the versions in WSL: `lsb_release -d` -> Ubuntu 24.04.5 LTS,
+  `git --version` -> 2.43.0, `uv --version` -> 0.13.9,
+  `uv run python --version` -> 3.13.18.
+- Pinned the exact Python version in `.python-version` (`3.13.18` instead of `3.13`), so
+  uv installs the same interpreter everywhere, and listed the exact versions in the README.
