@@ -501,3 +501,47 @@ sha256sum -c /tmp/before.sha                                    # after: all OK
   created the environment from `uv.lock` and produced identical results in about 21 s.
   Everything it created (`.venv/`, `data/`, `results/`, `results/.matplotlib/`) is inside
   the directory and ignored by git.
+
+## 2026-11-26 — Writing the report
+
+### What I did
+
+- Read PEP 1 and PEP 13 at the pinned commit (`git show <commit>:peps/pep-0001.rst`) and
+  two Developer's Guide pages, and wrote Part 1. Every claim links to the exact lines at
+  the pinned commit (`?plain=1#Lx-Ly`); I checked that each line range contains the text
+  it is cited for.
+- Added three tables to the code so that every number in the report comes from it:
+  discussion venue (`Discussions-To`) by year and period, and the share of Standards
+  Track decisions with a `Resolution` link and a `Sponsor`, by period. New columns in
+  `peps_clean.csv`: `has_sponsor`, `venue`.
+- Wrote Part 2 from `results/summary.md` and the earlier worklog entries.
+- Chose PEP 572 for Part 3 and followed it through the PEP's own history, the mailing
+  list archives, the CPython tracker and pull request, and the 3.8 release notes.
+  Opened every link to check that it shows what it is cited for.
+- Wrote Part 4, pointing every claim back to a section of Parts 1-3.
+- Added all 48 new report links to `docs/links.md`.
+
+### Decisions
+
+- **PEP 572** for Part 3: accepted, released (3.8) and the case that ended the BDFL
+  model, so it connects Parts 1, 2 and 4.
+- The first public proposal is the python-ideas post of 2018-02-27 (EST), which is
+  2018-02-28 in UTC and matches the `Created` header.
+- Line-level permalinks instead of section anchors: GitHub anchors for reStructuredText
+  are not stable, line numbers at a fixed commit are.
+
+### Findings worth noting
+
+- PEP 1 says Superseded is meant for Informational PEPs, but 16 of the 25 superseded
+  PEPs are Standards Track.
+- `Resolution` (required by PEP 1 for Standards Track) is present in 28.0 % of
+  BDFL-period decisions and 78.3 % of Steering Council decisions.
+- PEP 572: Guido became co-author on 2018-05-22 and accepted it on 2018-07-11; the PEP
+  was marked Final only on 2022-11-06, three years after Python 3.8.0.
+
+### Checks
+
+- Script: every number in Parts 2 and 4 appears in `results/summary.md` (the only
+  exceptions are section numbers, PEP numbers and the "75 %" percentile heading).
+- Script: every link in `docs/report.md` appears in `docs/links.md`.
+- Ruff format and lint checks pass.
