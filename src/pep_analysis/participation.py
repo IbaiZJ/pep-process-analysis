@@ -115,6 +115,50 @@ def delegation_table(peps: list[Row]) -> Table:
     return table
 
 
+def venue_table(peps: list[Row], group_name: str, group_of, keys: list[str]) -> Table:
+    """Share of PEPs per discussion venue (Discussions-To header), per group."""
+    names = ["Discourse", "python-dev list", "python-ideas list", "SIG list", "other", "none"]
+    groups: dict[str, Counter] = {key: Counter() for key in keys}
+    for row in peps:
+        groups.setdefault(group_of(row), Counter())[row["venue"]] += 1
+    table = []
+    for key, counts in groups.items():
+        total = sum(counts.values())
+        table.append({group_name: key, "peps": total, **{name: counts[name] for name in names}})
+    return table
+
+
+def documentation_table(peps: list[Row]) -> Table:
+    """How often two header rules from PEP 1 are followed, by period of decision.
+
+    - Resolution: PEP 1 requires a link to the decision for Standards Track PEPs that are
+      accepted, rejected or withdrawn.
+    - Sponsor: only needed when no author is a core developer, so a missing Sponsor is not
+      a violation; the share shows how often the role is used.
+    """
+    keys = [name for name, _ in PERIODS]
+    groups: dict[str, list[Row]] = {key: [] for key in keys}
+    for row in peps:
+        if (
+            row["type"] == "Standards Track"
+            and row["outcome"] in CLOSED
+            and row["decision_date"]
+            and not row["decision_in_bulk_commit"]
+        ):
+            groups[period_of(str(row["decision_date"]))].append(row)
+    return [
+        {
+            "decision_period": key,
+            "decisions": len(rows),
+            "with_resolution": sum(bool(r["has_resolution"]) for r in rows),
+            "with_resolution_%": pct(sum(bool(r["has_resolution"]) for r in rows), len(rows)),
+            "with_sponsor": sum(bool(r["has_sponsor"]) for r in rows),
+            "with_sponsor_%": pct(sum(bool(r["has_sponsor"]) for r in rows), len(rows)),
+        }
+        for key, rows in groups.items()
+    ]
+
+
 def summary_lines(
     peps_per_author: dict[str, int], peps: list[Row], authors: list[Row]
 ) -> list[str]:

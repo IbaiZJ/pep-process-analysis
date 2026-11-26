@@ -194,6 +194,20 @@ def run(peps: list[Row], authors: list[Row], log_entries: list[tuple[str, int, s
         "Standards Track decisions naming a delegate, by period of decision",
         participation.delegation_table(peps),
     )
+    tables["documentation_by_period"] = (
+        "Standards Track decisions with a Resolution link and a Sponsor, by period of decision",
+        participation.documentation_table(peps),
+    )
+    tables["venue_by_period"] = (
+        "Discussion venue (Discussions-To) by period of creation",
+        participation.venue_table(
+            peps, "created_period", lambda r: period_of(str(r["created"])), period_names
+        ),
+    )
+    tables["venue_by_year"] = (
+        "Discussion venue (Discussions-To) by year of creation",
+        participation.venue_table(peps, "created_year", lambda r: str(r["created_year"]), years),
+    )
 
     totals = Counter(row["outcome"] for row in peps)
     excluded_bulk = sum(bool(row["decision_in_bulk_commit"]) for row in peps)

@@ -37,6 +37,27 @@ OUTCOMES = {
 # not counted as authors in the participation analysis.
 NON_PERSON_AUTHORS = {"the python core team and community"}
 
+# Where the discussion took place, from the Discussions-To header. The header is optional
+# and was rarely filled in before 2019, so "none" is common and means "not recorded".
+VENUES = [
+    ("discuss.python.org", "Discourse"),
+    ("python-dev", "python-dev list"),
+    ("python-ideas", "python-ideas list"),
+    ("-sig", "SIG list"),
+]
+
+
+def venue(value: str) -> str:
+    """Classify a Discussions-To value into a discussion venue."""
+    if not value:
+        return "none"
+    lowered = value.lower()
+    for marker, name in VENUES:
+        if marker in lowered:
+            return name
+    return "other"
+
+
 # Authors are separated by commas, except before a suffix such as "Jr."
 # ("Fred L. Drake, Jr." is one person).
 AUTHOR_SEPARATOR = re.compile(r",(?!\s*Jr\.)")
@@ -162,6 +183,8 @@ def clean(
                 "delegate": EMAIL.sub("", delegate).strip(),
                 "delegate_field": delegate_field,
                 "has_resolution": bool(row.get("Resolution")),
+                "has_sponsor": bool(row.get("Sponsor")),
+                "venue": venue(row.get("Discussions-To", "")),
             }
         )
         for position, name in enumerate(people, start=1):
